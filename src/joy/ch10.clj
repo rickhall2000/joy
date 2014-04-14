@@ -280,3 +280,38 @@
                       i
                       (f (aget this i)))
             (finally (.unlock lk))))))))
+
+;; 10.6 Vars
+*read-eval*
+(var *read-eval*)
+#'*read-eval*
+
+(defn print-read-eval []
+  (println "*read-eval* is currently" *read-eval*))
+
+(defn binding-play []
+  (print-read-eval)
+  (binding [*read-eval* false]
+    (print-read-eval))
+  (print-read-eval))
+
+(binding-play)
+
+(def favorite-color :green)
+(var favorite-color)
+
+(def x 42)
+{:outer-var-value x
+ :with-locals (with-local-vars [x 9]
+                {:local-var x
+                 :local-var-value (var-get x)})}
+(with-precision 4 (/ 1M 3))
+
+(with-precision 4
+  (map (fn [x] (/ x 3)) (range 1M 4M)))
+
+(with-precision 4
+  (doall (map (fn [x] (/ x 3)) (range 1M 4M))))
+
+(with-precision 4
+  (map (bound-fn [x] (/ x 3)) (range 1M 4M)))
