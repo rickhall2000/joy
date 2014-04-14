@@ -1,5 +1,8 @@
 (ns joy.ch10
-  (:import java.util.concurrent.Executors))
+  (:refer-clojure :exclude [aget aset count seq])
+  (:require [clojure.core :as clj])
+  (:import  [java.util.concurrent.Executors]
+            [java.util.concurrent.locks.ReentrantLock]))
 
 (def thread-pool (Executors/newFixedThreadPool
                   (+ 2 (.availableProcessors
@@ -167,3 +170,113 @@
 (set-error-handler! log-agent handle-log-error)
 
 (set-error-mode! log-agent :continue)
+
+;; 10.4
+(def ^:dynamic *time* (atom 0))
+(defn tick [] (swap! *time* inc))
+(dothreads! tick :threads 1000 :times 100)
+@*time*
+
+(defn manipulable-memoize [function]
+  (let [cache (atom {})]
+    (with-meta
+      (fn [& args]
+        (or (second (find @cache args))
+            (let [ret (apply function args)]
+              (swap! cache assoc args ret)
+              ret)))
+      {:cache cache})))
+
+;; find returns a key value pair, if exits
+(find {:a 1 :b 2} :a) ;; => [:a 1]
+(find {:a 1 :b 2} :c) ;; => nil
+
+(def slowly (fn [x] (Thread/sleep 1000) x))
+
+(time [(slowly 9) (slowly 9)])
+
+(def sometimes-slowly (manipulable-memoize slowly))
+
+(time [(sometimes-slowly 108) (sometimes-slowly 108)])
+
+(meta sometimes-slowly)
+(let [cache (:cache (meta sometimes-slowly))]
+  (swap! cache dissoc '(108)))
+
+;; 10.5 Locks
+(defprotocol SafeArray
+  (aset [this i f])
+  (aget [this i])
+  (count [this])
+  (seq [this]))
+
+(defn make-dumb-array [t sz]
+  (let [a (make-array t sz)]
+    (reify
+      SafeArray
+      (count [_] (clj/count a))
+      (seq [_] (clj/seq a))
+      (aget [_ i] (clj/aget a i))
+      (aset [this i f]
+        (clj/aset a
+                  i
+                  (f (aget this i)))))))
+
+(defn pummel [a]
+  (dothreads! #(dotimes [i (count a)] (aset a i inc))
+              :threads 100))
+
+(def D (make-dumb-array Integer/TYPE 8))
+
+(pummel D)
+
+(seq D)
+
+(defn make-safe-array [t sz]
+  (let [a (make-array t sz)]
+    (reify
+      SafeArray
+      (count [_] (clj/count a))
+      (seq [_] (clj/seq a))
+      (aget [_ i]
+        (locking a
+          (clj/aget a i)))
+      (aset [this i f]
+        (locking a
+          (clj/aset a
+                    i
+                    (f (aget this i))))))))
+
+(def A (make-safe-array Integer/TYPE 8))
+
+(pummel A)
+
+(seq A)
+
+(defn lock-i [target-index num-locks]
+  (mod target-index num-locks))
+
+;; not sure why it can't find reentrantlock, it doesn't have trouble with the import statement
+#_(defn make-smart-array [t sz]
+  (let [a (make-array t sz)
+        Lsz (/ sz 2)
+        L (into-array (take Lsz
+                            (repeatedly #(ReentrantLock.))))]
+    (reify
+      SafeArray
+      (count [_] (clj/count a))
+      (seq [_] (clj/seq a))
+      (aget [_ i]
+        (let [lk (clj/aget L (lock-i (inc i) Lsz))]
+          (.lock lk)
+          (try
+            (clj/aget a i)
+            (finally (.unlock lk)))))
+      (aset [this i f]
+        (let [lk (clj/aget L (lock-i (inc i) Lsz))]
+          (.lock lk)
+          (try
+            (clj/aset a
+                      i
+                      (f (aget this i)))
+            (finally (.unlock lk))))))))
