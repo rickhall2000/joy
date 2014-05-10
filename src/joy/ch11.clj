@@ -116,3 +116,39 @@
                       {:run 1 :failed 1}))))))
 
 (run-tests pass fail fail fail pass)
+
+;; 11.2.2 Callback API to blocking API
+
+(defn tweet-items [k feed]
+  (k
+   (for [item (filter (comp #{:entry :item} :tag)
+                      (feed-children feed))]
+     (-> item :content first :content))))
+
+(tweet-items
+ count
+ "http://api.twitter.com/1/statuses/user_timeline.rss?user_id=46130870")
+
+(let [p (promise)]
+  (tweet-items #(deliver p (count %))
+               "https://api.twitter.com/1.1/statuses/user_timeline.rss?user_id=46130870")
+  @p)
+
+(defn cps->fn [f k]
+  (fn [& args]
+    (let [p (promise)]
+      (apply f (fn [x] (deliver p (k x))) args)
+      @p)))
+
+(def count-items (cps->fn tweet-items count))
+
+(count-items "https://api.twitter.com/1.1/statuses/user_timeline.rss?user_id=46130870")
+
+(def kant (promise))
+(def hume (promise))
+
+(ten/dothreads!
+ #(do (println "Kant has" @kant) (deliver hume :thinking)))
+
+(ten/dothreads!
+ #(do (println "hume is" @hume) (deliver kant :fork)))
