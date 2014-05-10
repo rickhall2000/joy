@@ -1,6 +1,7 @@
 (ns joy.ch11
   (:require (clojure [xml :as xml]))
   (:require (clojure [zip :as zip]))
+  (:require [joy.ch10 :as ten])
   (:import (java.util.regex Pattern)))
 
 (time (let [x (future (do (Thread/sleep 5000)
@@ -69,3 +70,32 @@
             "http://blog.fogus.me/feed/"
             "http://feeds.feedburner.com/ElixirLang"
             "http://www.ruby-lang.org/en/feeds/news.rss")
+
+;; 11.2 Promises
+(def x (promise))
+(def y (promise))
+(def z (promise))
+
+(ten/dothreads! #(deliver z (+ @x @y)))
+
+(ten/dothreads!
+ #(do (Thread/sleep 2000) (deliver x 52)))
+
+(ten/dothreads!
+ #(do (Thread/sleep 4000) (deliver y 86)))
+
+(time @z)
+
+(defmacro with-promises [[n tasks _ as] & body]
+  (when as
+    `(let [tasks# ~tasks
+           n# (count tasks#)
+           promises# (take n# (repeatedly promise))]
+       (dotimes [i# n#]
+         (dothreads!
+          (fn []
+            (deliver (nth promises# i#)
+                     ((nth tasks# i#))))))
+       (let [~n tasks#
+             ~as promises#]
+         ~@body))))

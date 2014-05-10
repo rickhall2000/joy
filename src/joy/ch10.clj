@@ -4,7 +4,7 @@
   (:import  [java.util.concurrent.Executors]
             [java.util.concurrent.locks.ReentrantLock]))
 
-(def thread-pool (Executors/newFixedThreadPool
+(def thread-pool (java.util.concurrent.Executors/newFixedThreadPool
                   (+ 2 (.availableProcessors
                         (Runtime/getRuntime)))))
 
@@ -157,8 +157,8 @@
 
 @log-agent
 
-(agent-error log-agent)
-(send log-agent (fn [_] 3000))
+#_(agent-error log-agent)
+#_(send log-agent (fn [_] 3000))
 
 (restart-agent log-agent 2500 :clear-actions true)
 
@@ -307,7 +307,7 @@
                  :local-var-value (var-get x)})}
 (with-precision 4 (/ 1M 3))
 
-(with-precision 4
+#_(with-precision 4
   (map (fn [x] (/ x 3)) (range 1M 4M)))
 
 (with-precision 4
