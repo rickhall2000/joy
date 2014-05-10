@@ -92,10 +92,27 @@
            n# (count tasks#)
            promises# (take n# (repeatedly promise))]
        (dotimes [i# n#]
-         (dothreads!
+         (ten/dothreads!
           (fn []
             (deliver (nth promises# i#)
                      ((nth tasks# i#))))))
        (let [~n tasks#
              ~as promises#]
          ~@body))))
+
+(defrecord TestRun [run passed failed])
+
+(defn pass [] true)
+(defn fail [] false)
+
+(defn run-tests [& all-tests]
+  (with-promises
+    [tests all-tests :as results]
+    (into (TestRun. 0 0 0)
+          (reduce #(merge-with + %1 %2) {}
+                  (for [r results]
+                    (if @r
+                      {:run 1 :passed 1}
+                      {:run 1 :failed 1}))))))
+
+(run-tests pass fail fail fail pass)
