@@ -152,3 +152,27 @@
 
 (ten/dothreads!
  #(do (println "hume is" @hume) (deliver kant :fork)))
+
+;; 11.3 parallel operations
+(pvalues 1 2 (+ 1 2))
+
+(defn sleeper [s thing] (Thread/sleep (* 1000 s)) thing)
+(defn pvs [] (pvalues
+              (sleeper 2 :1st)
+              (sleeper 3 :2nd)
+              (keyword "3rd")))
+
+(-> (pvs) first time)
+(-> (pvs) last time)
+
+(->> [1 2 3]
+     (pmap (comp inc (partial sleeper 2)))
+     doall
+     time)
+
+(-> (pcalls
+     #(sleeper 2 :1st)
+     #(sleeper 3 :2nd)
+     #(keyword "3rd"))
+    doall
+    time)
