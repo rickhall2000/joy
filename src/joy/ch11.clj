@@ -1,7 +1,8 @@
 (ns joy.ch11
   (:require (clojure [xml :as xml]))
   (:require (clojure [zip :as zip]))
-  (:require [joy.ch10 :as ten])
+  (:require [joy.ch10 :as ten]
+            [clojure.core.reducers :as r])
   (:import (java.util.regex Pattern)))
 
 (time (let [x (future (do (Thread/sleep 5000)
@@ -176,3 +177,10 @@
      #(keyword "3rd"))
     doall
     time)
+
+;; 11.4 reducers
+(def big-vec (vec (range (* 1000 1000))))
+
+(time (reduce + big-vec))
+
+(time (r/fold + big-vec))
