@@ -117,3 +117,68 @@
         (respond exchange (details file))))))
 
 (update-proxy p {"handle" fs-handler})
+
+;; 12.3 Arrays
+(doto (StringBuilder. "abc")
+  (.append (into-array [\x \y \z])))
+
+(doto (StringBuilder. "abc")
+  (.append (char-array [\x \y \z])))
+
+(let [ary (make-array Long/TYPE 3 3)]
+  (dotimes [i 3]
+    (dotimes [j 3]
+      (aset ary i j (+ i j))))
+  (map seq ary))
+
+(into-array ["a" "b" "c"])
+
+(into-array [(java.util.Date.) (java.sql.Time. 0)])
+
+#_(into-array ["a" "b" 1M])
+
+(into-array Number [1 2.0 3M 4/5])
+
+(to-array-2d [[1 2 3]
+              [4 5 6]])
+
+(to-array ["a" 1M #(proxy [Object] [])])
+
+(to-array [1 (int 2)])
+
+(def ary (into-array [1 2 3]))
+(def sary (seq ary))
+sary
+
+(aset ary 0 42)
+sary
+
+(defn asum-sq [xs]
+  (let [dbl (amap xs i ret
+                  (* (aget xs i)
+                     (aget xs i)))]
+    (areduce dbl i ret 0
+             (+ ret (aget dbl i)))))
+
+(asum-sq (double-array [1 2 3 4 5]))
+
+(defmulti what-is class)
+(defmethod what-is
+  (Class/forName "[Ljava.lang.String;")
+  [_]
+  "1d String")
+
+(defmethod what-is
+  (Class/forName "[[Ljava.lang.Object;")
+  [_]
+  "2d Object")
+
+(defmethod what-is
+  (Class/forName "[[[[I")
+  [_]
+  "Primitive 4d int")
+
+
+(what-is (into-array ["a" "b"]))
+(what-is (to-array-2d [[1 2] [3 4]]))
+(what-is (make-array Integer/TYPE 2 2 2 2))
