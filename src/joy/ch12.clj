@@ -4,7 +4,8 @@
   (:import [com.sun.net.httpserver HttpHandler HttpExchange
             HttpServer]
            [java.net InetSocketAddress URLDecoder URI]
-           [java.io File FilterOutputStream]))
+           [java.io File FilterOutputStream]
+           [java.util Comparator Collections ArrayList]))
 
 (def OK java.net.HttpURLConnection/HTTP_OK)
 
@@ -178,7 +179,44 @@ sary
   [_]
   "Primitive 4d int")
 
+(defmethod what-is (Class/forName "[[D")
+  [a]
+  "Primative 2d double")
+
+(defmethod what-is (Class/forName "[Lclojure.lang.PersistentVector;")
+  [a]
+  "1d Persistent Vector")
+
+
 
 (what-is (into-array ["a" "b"]))
 (what-is (to-array-2d [[1 2] [3 4]]))
 (what-is (make-array Integer/TYPE 2 2 2 2))
+
+(what-is (into-array (map double-array [[1.0] [2.0]])))
+(what-is (into-array [[1.0] [2.0]]))
+
+(String/format "An int %d and a String %s"
+               (to-array [99 "luftballons"]))
+
+;; 12.4
+(ancestors (class #()))
+
+(defn gimmie [] (ArrayList. [1 3 4 8 2]))
+
+(doto (gimmie)
+  (Collections/sort (Collections/reverseOrder)))
+
+(doto (gimmie)
+  (Collections/sort
+   (reify Comparator
+     (compare [this l r]
+       (cond
+        (> l r) -1
+        (= l r) 0
+        :else 1)))))
+
+(doto (gimmie) (Collections/sort #(compare %2 %1)))
+(doto (gimmie) (Collections/sort >))
+(doto (gimmie) (Collections/sort <))
+(doto (gimmie) (Collections/sort (complement <)))
