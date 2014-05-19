@@ -5,7 +5,8 @@
             HttpServer]
            [java.net InetSocketAddress URLDecoder URI]
            [java.io File FilterOutputStream]
-           [java.util Comparator Collections ArrayList]))
+           [java.util Comparator Collections ArrayList]
+           [java.util.concurrent FutureTask]))
 
 (def OK java.net.HttpURLConnection/HTTP_OK)
 
@@ -220,3 +221,42 @@ sary
 (doto (gimmie) (Collections/sort >))
 (doto (gimmie) (Collections/sort <))
 (doto (gimmie) (Collections/sort (complement <)))
+
+(doto (Thread. #(do (Thread/sleep 5000)
+                    (println "haikeeba!")))
+  .start)
+
+(let [f (FutureTask. #(do (Thread/sleep 5000) 42))]
+  (.start (Thread. #(.run f)))
+  (.get f))
+
+;; 12.5 Using Clojure data structures in java
+(.get '[a b c] 1)
+(.get (repeat :a) 138)
+(.containsAll '[a b c] '[b c])
+#_(.add '[a 'b 'c] 'd)
+
+#_(java.util.Collections/sort [3 4 2 1])
+
+(.compareTo [:a] [:a])
+(.compareTo [:a :b] [:a])
+(.compareTo [:a :b] [:a :b :c])
+(sort [[:a :b :c] [:a] [:a :b]])
+
+#_(.compareTo [1 2 3]  '(1 2 3))
+
+(defn shuffle [coll]
+  (seq (doto (java.util.ArrayList. coll)
+         java.util.Collections/shuffle)))
+(shuffle (range 10))
+
+(java.util.Collections/unmodifiableMap
+ (doto (java.util.HashMap.) (.put :a 1)))
+(into {} (doto (java.util.HashMap.) (.put :a 1)))
+
+(def x (java.awt.Point. 0 0))
+(def y (java.awt.Point. 0 42))
+(def points #{x y})
+points
+(.setLocation y 0 0)
+points
