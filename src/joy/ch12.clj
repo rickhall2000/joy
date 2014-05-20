@@ -260,3 +260,93 @@ sary
 points
 (.setLocation y 0 0)
 points
+
+;; 12.6 definterface
+
+(definterface ISliceable
+  (slice [^long s ^long e])
+  (^long sliceCount []))
+
+(def dumb
+  (reify joy.ch12.ISliceable
+    (slice [_ s e] [:empty])
+    (sliceCount [_] 42)))
+
+(.slice dumb 1 2)
+(.sliceCount dumb)
+
+(defprotocol Sliceable
+  (slice [this s e])
+  (sliceCount [this]))
+
+(extend joy.ch12.ISliceable
+  Sliceable
+  {:slice (fn [this s e] (.slice this s e))
+   :sliceCount (fn [this] (.sliceCount this))})
+(sliceCount dumb)
+
+(defn calc-slice-count [thing]
+  (let [! #(reduce * (take % (iterate inc 1)))
+        n (count thing)]
+    (/ (! (- (+ n 2) 1))
+       (* (! 2) (! (- n 1))))))
+
+(extend-type String
+  Sliceable
+  (slice [this s e] (.substring this s (inc e)))
+  (sliceCount [this] (calc-slice-count this)))
+
+(slice "abc" 0 1)
+(sliceCount "abc")
+
+;; 12.7 Beware the exceptions
+(comment
+  (defn explode [] (explode))
+  (try (explode) (catch Exception e "stack is blown"))
+  (try (explode (catch StackOverflowError e "stack is blown")))
+  (try (throw (RuntimeException.))
+       (catch Throwable e "Catching throwable is bad"))
+
+  (defmacro do-something [x] `(~x))
+  (do-something 1)
+
+  (defmacro pairs [& args]
+    (if (even? (count args))
+      `(partition 2 '~args)
+      (throw (Exception.
+              (str "Pairs requires and even number of args")))))
+
+  (pairs 1 2 3)
+  (pairs 1 2 3 4)
+
+  (fn [] (pairs 1 2 3)))
+
+(defmacro -?> [& forms]
+  `(try (-> ~@forms)
+        (catch NullPointerException _# nil)))
+(-> 25 Math/sqrt (+ 100))
+
+(-?> 25 Math/sqrt (and nil) (+ 100))
+#_(-> 25 Math/sqrt (and nil) (+ 100))
+
+
+(defn perform-unclean-act [x y]
+  (/ x y))
+
+(try (perform-unclean-act 42 0)
+     (catch RuntimeException ex
+       (println (str "something went wrong"))))
+
+(defn perform-cleaner-act [x y]
+  (try
+    (/ x y)
+    (catch ArithmeticException ex
+      (throw (ex-info "You attempted an unclean act"
+                     {:args [x y]})))))
+
+(try
+  (perform-cleaner-act 108 0)
+  (catch RuntimeException ex
+    (println (str "received error: " (.getMessage ex)))
+    (when-let [ctx (ex-data ex)]
+      (println (str "more information:" ctx)))))
