@@ -1,0 +1,16 @@
+var DummyClass={};
+DummyClass.linearRmpToValueAtTime=function(){};
+DummyClass.noteOn=function(){};
+DummyClass.value=function(){};
+DummyClass.webkitAudioContext=function(){};
+DummyClass.AudioContext=function(){};
+DummyClass.gain=function(){};
+DummyClass.createDynamicsCompressor=function(){};
+DummyClass.frequency=function(){};
+DummyClass.detune=function(){};
+DummyClass.destination=function(){};
+DummyClass.currentTime=function(){};
+DummyClass.createOscillator=function(){};
+DummyClass.createGainNode=function(){};
+DummyClass.connect=function(){};
+DummyClass.noteOff=function(){};

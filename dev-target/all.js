@@ -487,6 +487,19 @@ goog.base = function(me, opt_methodName, var_args) {
 goog.scope = function(fn) {
   fn.call(goog.global)
 };
+goog.provide("goog.debug.Error");
+goog.debug.Error = function(opt_msg) {
+  if(Error.captureStackTrace) {
+    Error.captureStackTrace(this, goog.debug.Error)
+  }else {
+    this.stack = (new Error).stack || ""
+  }
+  if(opt_msg) {
+    this.message = String(opt_msg)
+  }
+};
+goog.inherits(goog.debug.Error, Error);
+goog.debug.Error.prototype.name = "CustomError";
 goog.provide("goog.string");
 goog.provide("goog.string.Unicode");
 goog.string.Unicode = {NBSP:"\u00a0"};
@@ -927,19 +940,6 @@ goog.string.parseInt = function(value) {
   }
   return NaN
 };
-goog.provide("goog.debug.Error");
-goog.debug.Error = function(opt_msg) {
-  if(Error.captureStackTrace) {
-    Error.captureStackTrace(this, goog.debug.Error)
-  }else {
-    this.stack = (new Error).stack || ""
-  }
-  if(opt_msg) {
-    this.message = String(opt_msg)
-  }
-};
-goog.inherits(goog.debug.Error, Error);
-goog.debug.Error.prototype.name = "CustomError";
 goog.provide("goog.asserts");
 goog.provide("goog.asserts.AssertionError");
 goog.require("goog.debug.Error");
@@ -22261,25 +22261,25 @@ cljs.core.special_symbol_QMARK_ = function special_symbol_QMARK_(x) {
 };
 goog.provide("joy.music");
 goog.require("cljs.core");
-joy.music.soft_attack = function soft_attack(ctx, p__9601) {
-  var map__9604 = p__9601;
-  var map__9604__$1 = cljs.core.seq_QMARK_.call(null, map__9604) ? cljs.core.apply.call(null, cljs.core.hash_map, map__9604) : map__9604;
-  var duration = cljs.core.get.call(null, map__9604__$1, "\ufdd0:duration");
-  var delay = cljs.core.get.call(null, map__9604__$1, "\ufdd0:delay");
-  var volume = cljs.core.get.call(null, map__9604__$1, "\ufdd0:volume");
+joy.music.soft_attack = function soft_attack(ctx, p__3419) {
+  var map__3422 = p__3419;
+  var map__3422__$1 = cljs.core.seq_QMARK_.call(null, map__3422) ? cljs.core.apply.call(null, cljs.core.hash_map, map__3422) : map__3422;
+  var duration = cljs.core.get.call(null, map__3422__$1, "\ufdd0:duration");
+  var delay = cljs.core.get.call(null, map__3422__$1, "\ufdd0:delay");
+  var volume = cljs.core.get.call(null, map__3422__$1, "\ufdd0:volume");
   var node = ctx.createGainNode();
-  var G__9605_9606 = node.gain;
-  G__9605_9606.linearRmpToValueAtTime(0, delay);
-  G__9605_9606.linearRmpToValueAtTime(volume, delay + 0.05);
-  G__9605_9606.linearRmpToValueAtTime(0, delay + duration);
+  var G__3423_3424 = node.gain;
+  G__3423_3424.linearRmpToValueAtTime(0, delay);
+  G__3423_3424.linearRmpToValueAtTime(volume, delay + 0.05);
+  G__3423_3424.linearRmpToValueAtTime(0, delay + duration);
   return node
 };
-joy.music.sine_tone = function sine_tone(ctx, p__9607) {
-  var map__9609 = p__9607;
-  var map__9609__$1 = cljs.core.seq_QMARK_.call(null, map__9609) ? cljs.core.apply.call(null, cljs.core.hash_map, map__9609) : map__9609;
-  var duration = cljs.core.get.call(null, map__9609__$1, "\ufdd0:duration");
-  var delay = cljs.core.get.call(null, map__9609__$1, "\ufdd0:delay");
-  var cent = cljs.core.get.call(null, map__9609__$1, "\ufdd0:cent");
+joy.music.sine_tone = function sine_tone(ctx, p__3425) {
+  var map__3427 = p__3425;
+  var map__3427__$1 = cljs.core.seq_QMARK_.call(null, map__3427) ? cljs.core.apply.call(null, cljs.core.hash_map, map__3427) : map__3427;
+  var duration = cljs.core.get.call(null, map__3427__$1, "\ufdd0:duration");
+  var delay = cljs.core.get.call(null, map__3427__$1, "\ufdd0:delay");
+  var cent = cljs.core.get.call(null, map__3427__$1, "\ufdd0:cent");
   var node = ctx.createOscillator();
   node.frequency.value = 440;
   node.detune.value = cent - 900;
@@ -22312,50 +22312,50 @@ joy.music.play_BANG_ = function play_BANG_(note_fn, notes) {
     var ctor = temp__4090__auto__;
     var ctx = joy.music.make_once.call(null, ctor);
     var compressor = ctx.createDynamicsCompressor();
-    var now_9618 = ctx.currentTime;
-    var seq__9614_9619 = cljs.core.seq.call(null, notes);
-    var chunk__9615_9620 = null;
-    var count__9616_9621 = 0;
-    var i__9617_9622 = 0;
+    var now_3436 = ctx.currentTime;
+    var seq__3432_3437 = cljs.core.seq.call(null, notes);
+    var chunk__3433_3438 = null;
+    var count__3434_3439 = 0;
+    var i__3435_3440 = 0;
     while(true) {
-      if(i__9617_9622 < count__9616_9621) {
-        var note_9623 = cljs.core._nth.call(null, chunk__9615_9620, i__9617_9622);
-        joy.music.connect_to.call(null, note_fn.call(null, ctx, cljs.core.update_in.call(null, note_9623, cljs.core.PersistentVector.fromArray(["\ufdd0:delay"], true), cljs.core._PLUS_, now_9618)), compressor);
-        var G__9624 = seq__9614_9619;
-        var G__9625 = chunk__9615_9620;
-        var G__9626 = count__9616_9621;
-        var G__9627 = i__9617_9622 + 1;
-        seq__9614_9619 = G__9624;
-        chunk__9615_9620 = G__9625;
-        count__9616_9621 = G__9626;
-        i__9617_9622 = G__9627;
+      if(i__3435_3440 < count__3434_3439) {
+        var note_3441 = cljs.core._nth.call(null, chunk__3433_3438, i__3435_3440);
+        joy.music.connect_to.call(null, note_fn.call(null, ctx, cljs.core.update_in.call(null, note_3441, cljs.core.PersistentVector.fromArray(["\ufdd0:delay"], true), cljs.core._PLUS_, now_3436)), compressor);
+        var G__3442 = seq__3432_3437;
+        var G__3443 = chunk__3433_3438;
+        var G__3444 = count__3434_3439;
+        var G__3445 = i__3435_3440 + 1;
+        seq__3432_3437 = G__3442;
+        chunk__3433_3438 = G__3443;
+        count__3434_3439 = G__3444;
+        i__3435_3440 = G__3445;
         continue
       }else {
-        var temp__4092__auto___9628 = cljs.core.seq.call(null, seq__9614_9619);
-        if(temp__4092__auto___9628) {
-          var seq__9614_9629__$1 = temp__4092__auto___9628;
-          if(cljs.core.chunked_seq_QMARK_.call(null, seq__9614_9629__$1)) {
-            var c__3033__auto___9630 = cljs.core.chunk_first.call(null, seq__9614_9629__$1);
-            var G__9631 = cljs.core.chunk_rest.call(null, seq__9614_9629__$1);
-            var G__9632 = c__3033__auto___9630;
-            var G__9633 = cljs.core.count.call(null, c__3033__auto___9630);
-            var G__9634 = 0;
-            seq__9614_9619 = G__9631;
-            chunk__9615_9620 = G__9632;
-            count__9616_9621 = G__9633;
-            i__9617_9622 = G__9634;
+        var temp__4092__auto___3446 = cljs.core.seq.call(null, seq__3432_3437);
+        if(temp__4092__auto___3446) {
+          var seq__3432_3447__$1 = temp__4092__auto___3446;
+          if(cljs.core.chunked_seq_QMARK_.call(null, seq__3432_3447__$1)) {
+            var c__3033__auto___3448 = cljs.core.chunk_first.call(null, seq__3432_3447__$1);
+            var G__3449 = cljs.core.chunk_rest.call(null, seq__3432_3447__$1);
+            var G__3450 = c__3033__auto___3448;
+            var G__3451 = cljs.core.count.call(null, c__3033__auto___3448);
+            var G__3452 = 0;
+            seq__3432_3437 = G__3449;
+            chunk__3433_3438 = G__3450;
+            count__3434_3439 = G__3451;
+            i__3435_3440 = G__3452;
             continue
           }else {
-            var note_9635 = cljs.core.first.call(null, seq__9614_9629__$1);
-            joy.music.connect_to.call(null, note_fn.call(null, ctx, cljs.core.update_in.call(null, note_9635, cljs.core.PersistentVector.fromArray(["\ufdd0:delay"], true), cljs.core._PLUS_, now_9618)), compressor);
-            var G__9636 = cljs.core.next.call(null, seq__9614_9629__$1);
-            var G__9637 = null;
-            var G__9638 = 0;
-            var G__9639 = 0;
-            seq__9614_9619 = G__9636;
-            chunk__9615_9620 = G__9637;
-            count__9616_9621 = G__9638;
-            i__9617_9622 = G__9639;
+            var note_3453 = cljs.core.first.call(null, seq__3432_3447__$1);
+            joy.music.connect_to.call(null, note_fn.call(null, ctx, cljs.core.update_in.call(null, note_3453, cljs.core.PersistentVector.fromArray(["\ufdd0:delay"], true), cljs.core._PLUS_, now_3436)), compressor);
+            var G__3454 = cljs.core.next.call(null, seq__3432_3447__$1);
+            var G__3455 = null;
+            var G__3456 = 0;
+            var G__3457 = 0;
+            seq__3432_3437 = G__3454;
+            chunk__3433_3438 = G__3455;
+            count__3434_3439 = G__3456;
+            i__3435_3440 = G__3457;
             continue
           }
         }else {
@@ -22369,3 +22369,37 @@ joy.music.play_BANG_ = function play_BANG_(note_fn, notes) {
   }
 };
 joy.music.play_BANG_.call(null, joy.music.woo, cljs.core.PersistentVector.fromArray([cljs.core.PersistentArrayMap.fromArray(["\ufdd0:cent", 1100, "\ufdd0:duration", 1, "\ufdd0:delay", 0, "\ufdd0:volume", 0.6], true), cljs.core.PersistentArrayMap.fromArray(["\ufdd0:cent", 1400, "\ufdd0:duration", 1, "\ufdd0:delay", 0.2, "\ufdd0:volume", 0.6], true), cljs.core.PersistentArrayMap.fromArray(["\ufdd0:cent", 1800, "\ufdd0:duration", 1, "\ufdd0:delay", 0.4, "\ufdd0:volume", 0.6], true)], true));
+joy.music.pair_to_note = function pair_to_note(p__3458) {
+  var vec__3460 = p__3458;
+  var tone = cljs.core.nth.call(null, vec__3460, 0, null);
+  var duration = cljs.core.nth.call(null, vec__3460, 1, null);
+  return cljs.core.PersistentArrayMap.fromArray(["\ufdd0:cent", 100 * tone, "\ufdd0:duration", duration, "\ufdd0:volume", 0.4], true)
+};
+joy.music.consecutive_notes = function consecutive_notes(notes) {
+  return cljs.core.reductions.call(null, function(p__3463, note) {
+    var map__3464 = p__3463;
+    var map__3464__$1 = cljs.core.seq_QMARK_.call(null, map__3464) ? cljs.core.apply.call(null, cljs.core.hash_map, map__3464) : map__3464;
+    var duration = cljs.core.get.call(null, map__3464__$1, "\ufdd0:duration");
+    var delay = cljs.core.get.call(null, map__3464__$1, "\ufdd0:delay");
+    return cljs.core.assoc.call(null, note, "\ufdd0:delay", delay + duration)
+  }, notes)
+};
+joy.music.notes = function notes(tone_pairs) {
+  var bpm = 360;
+  var bps = bpm / 60;
+  return cljs.core.map.call(null, function(p1__3466_SHARP_) {
+    return cljs.core.update_in.call(null, p1__3466_SHARP_, cljs.core.PersistentVector.fromArray(["\ufdd0:duration"], true), cljs.core._SLASH_, bps)
+  }, cljs.core.map.call(null, function(p1__3465_SHARP_) {
+    return cljs.core.update_in.call(null, p1__3465_SHARP_, cljs.core.PersistentVector.fromArray(["\ufdd0:delay"], true), cljs.core._SLASH_, bps)
+  }, joy.music.consecutive_notes.call(null, cljs.core.map.call(null, joy.music.pair_to_note, tone_pairs))))
+};
+joy.music.magical_theme = function magical_theme() {
+  return cljs.core.concat.call(null, cljs.core.PersistentVector.fromArray([cljs.core.PersistentVector.fromArray([11, 2], true), cljs.core.PersistentVector.fromArray([16, 3], true), cljs.core.PersistentVector.fromArray([19, 1], true), cljs.core.PersistentVector.fromArray([18, 2], true), cljs.core.PersistentVector.fromArray([16, 4], true), cljs.core.PersistentVector.fromArray([23, 2], true)], true), cljs.core.PersistentVector.fromArray([cljs.core.PersistentVector.fromArray([21, 6], true), cljs.core.PersistentVector.fromArray([18, 
+  6], true), cljs.core.PersistentVector.fromArray([16, 3], true), cljs.core.PersistentVector.fromArray([19, 1], true), cljs.core.PersistentVector.fromArray([18, 2], true), cljs.core.PersistentVector.fromArray([14, 4], true), cljs.core.PersistentVector.fromArray([17, 2], true), cljs.core.PersistentVector.fromArray([11, 10], true)], true), cljs.core.PersistentVector.fromArray([cljs.core.PersistentVector.fromArray([11, 2], true), cljs.core.PersistentVector.fromArray([16, 3], true), cljs.core.PersistentVector.fromArray([19, 
+  1], true), cljs.core.PersistentVector.fromArray([18, 2], true), cljs.core.PersistentVector.fromArray([16, 4], true), cljs.core.PersistentVector.fromArray([23, 2], true)], true), cljs.core.PersistentVector.fromArray([cljs.core.PersistentVector.fromArray([26, 4], true), cljs.core.PersistentVector.fromArray([25, 2], true), cljs.core.PersistentVector.fromArray([24, 4], true), cljs.core.PersistentVector.fromArray([20, 2], true), cljs.core.PersistentVector.fromArray([24, 3], true), cljs.core.PersistentVector.fromArray([23, 
+  1], true), cljs.core.PersistentVector.fromArray([22, 2], true), cljs.core.PersistentVector.fromArray([10, 4], true), cljs.core.PersistentVector.fromArray([19, 2], true), cljs.core.PersistentVector.fromArray([16, 10], true)], true))
+};
+joy.music.go = function go() {
+  return joy.music.play_BANG_.call(null, joy.music.woo, joy.music.magical_theme.call(null))
+};
+goog.exportSymbol("joy.music.go", joy.music.go);

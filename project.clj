@@ -12,4 +12,11 @@
      :compiler
      {:output-to "dev-target/all.js"
       :optimizations :whitespace
-      :pretty-print true}}]})
+      :pretty-print true}}
+    {:source-paths ["src/cljs"]
+     :compiler
+     {:output-to "prod-target/all.js"
+      :optimizations :advanced
+      :externs ["externs.js"]
+      :pretty-print false}}]}
+  )
