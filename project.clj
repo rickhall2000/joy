@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-1835"]]
   :plugins [[lein-cljsbuild "0.3.2"]]
+  :source-paths ["src/clj"]
   :cljsbuild
   {:builds
    [{:source-paths ["src/cljs"]

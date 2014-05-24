@@ -1,4 +1,5 @@
-(ns joy.music)
+(ns joy.music
+  (:require-macros [joy.macro-tunes :as mtunes]))
 
 (defn soft-attack
   [ctx {:keys [volume delay duration]}]
@@ -50,6 +51,7 @@
             {:cent 1400 :duration 1 :delay 0.2 :volume 0.6}
             {:cent 1800 :duration 1 :delay 0.4 :volume 0.6}])
 
+(comment
 (defn pair-to-note
   [[tone duration]]
   {:cent (* 100 tone)
@@ -79,7 +81,7 @@
    [[11 2] [16 3] [19 1] [18 2] [16 4] [23 2]]
    [[21 6] [18 6] [16 3] [19 1] [18 2] [14 4] [17 2] [11 10]]
    [[11 2] [16 3] [19 1] [18 2] [16 4] [23 2]]
-   [[26 4] [25 2] [24 4] [20 2] [24 3] [23 1] [22 2] [10 4]       [19 2] [16 10]]))
+   [[26 4] [25 2] [24 4] [20 2] [24 3] [23 1] [22 2] [10 4]       [19 2] [16 10]])))
 
 (defn ^:export go []
-  (play! woo (magical-theme)))
+  (play! woo (mtunes/magical-theme)))
