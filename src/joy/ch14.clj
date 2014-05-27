@@ -1,6 +1,7 @@
 (ns joy.ch14
   (:require [clojure.data :as d]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [clojure.set :as sql]))
 
 (rand-int 1024)
 (+ (rand-int 100) (rand-int 100))
@@ -35,11 +36,6 @@ ascii
 
 (d/diff [1 2 3] [1 2 4])
 
-#_(defspec slope-rules
-  (fn [p1 p2] (slope :p1 p1 :p2 p2))
-  [[^long ^long] [^long ^long]]
-  (assert (float? %)))
-
 (defn filter-rising [segments]
   (clojure.set/select
    (fn [{:keys [p1 p2]}]
@@ -70,7 +66,7 @@ ascii
             :cm 1/100
             :mm [1/10 :cm]}))
 
-#unit/legth [1 :km]
+;;#unit/legth [1 :km]
 
 (def time-reader
   (partial convert
@@ -89,10 +85,56 @@ ascii
 
 (edn/read-string "42")
 
-(edn/read-string "#ch14/time [1 :min 30 :sec]")
+#_(edn/read-string "#ch14/time [1 :min 30 :sec]")
 
 (def T ('ch14/time #'joy.ch14/time-reader))
 
-(edn/read-string {:readers T} "#ch14/time [1 :min 30 :sec]")
+#_(edn/read-string {:readers T} "#ch14/time [1 :min 30 :sec]")
 
 (edn/read-string {:readers T, :default vector} "#what/the :huh?")
+
+;; 14.3
+(defn valid? [event]
+  (boolean (:result event)))
+
+(valid? {})
+(valid? {:result 42})
+
+(defn effect [{:keys [ab h] :or {ab 0, h 0}} event]
+  (let [ab (inc ab)
+        h (if (= :hit (:result event)) (inc h) h)
+        avg (double (/ h ab))]
+    {:ab ab :h h :avg avg}))
+
+(effect {} {:result :hit})
+
+(effect {:ab 599 :h 180}
+        {:result :out})
+
+(defn apply-effect [state event]
+  (if (valid? event) (effect state event) state))
+
+(apply-effect {:ab 600 :h 180}
+              {:result :hit})
+
+(def effect-all #(reduce apply-effect %1 %2))
+
+(effect-all {:ab 0 :h 0}
+            [{:result :hit}
+             {:result :out}
+             {:result :hit}
+             {:result :out}])
+
+(def events
+  (repeatedly 100
+              (fn [] (rand-map 1
+                              #(-> :result)
+                              #(if (<  (rand-int 10) 3)
+                                 :hit :out)))))
+
+(effect-all {} events)
+(effect-all {} (take 50 events))
+
+(def fx-timeline #(reductions apply-effect %1 %2))
+
+(fx-timeline {} (take 3 events))
