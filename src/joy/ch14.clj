@@ -138,3 +138,48 @@ ascii
 (def fx-timeline #(reductions apply-effect %1 %2))
 
 (fx-timeline {} (take 3 events))
+
+(def PLAYERS #{{:player "Nick" :ability 32} {:player "Matt" :ability 26} {:player "Ryan" :ability 19}})
+
+(defn lookup [db name]
+  (first (sql/select #(= name (:player %)) db)))
+
+(lookup PLAYERS "Nick")
+
+(defn update-stats [db event]
+  (let [player (lookup db (:player event))
+        less-db (sql/difference db #{player})]
+    (conj less-db (merge player (effect player event)))))
+
+(update-stats PLAYERS {:player "Nick" :result :hit})
+
+(defn commit-event [db event]
+  (dosync (alter db update-stats event)))
+
+(commit-event (ref PLAYERS) {:player "Nick" :result :hit})
+
+(defn rand-event [{ability :ability}]
+  (let [able (numerator ability)
+        max (denominator ability)]
+    (rand-map 1 #(-> :result) #(if
+                                  (< (rand-int max) able)
+                                :hit :out))))
+
+(defn rand-events [total player]
+  (take total (repeatedly #(assoc
+                               (rand-event player) :player
+                               (:player player)))))
+
+(rand-events 3 {:player "Nick" :ability 32/100})
+
+(def agent-for-player
+  (memoize (fn [player-name]
+             (-> (agent [])
+                 (set-error-handler! #(println "ERROR:   " %1 %2))
+                 (set-error-mode! :fail)))))
+(defn feed [db event]
+  (let [a (agent-for-player (:player event))]
+    (send a
+          (fn [state]
+            (commit-event db event
+                          (conj state event))))))
