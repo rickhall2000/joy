@@ -175,11 +175,109 @@ ascii
 (def agent-for-player
   (memoize (fn [player-name]
              (-> (agent [])
-                 (set-error-handler! #(println "ERROR:   " %1 %2))
+                 (set-error-handler! #(println "ERROR: " %1 %2))
                  (set-error-mode! :fail)))))
+
 (defn feed [db event]
   (let [a (agent-for-player (:player event))]
     (send a
           (fn [state]
             (commit-event db event
                           (conj state event))))))
+
+(defn feed-all [db events]
+  (doseq [event events]
+    (feed db event)) db)
+
+#_(let [db (ref PLAYERS)]
+  (feed-all db
+            (rand-events 100
+                         {:player "Nick" :ability 32/100}))
+  db)
+
+#_(count @(agent-for-player "Nick"))
+
+(defn simulate [total players]
+  (let [events
+        (apply interleave
+               (for [player players]
+                 (rand-events total player)))
+        results
+        (feed-all (ref players) events)]
+    (apply await
+           (map #(agent-for-player
+                  (:player %)) players))
+    @results))
+
+;; 14.4 Code as Data as Code
+
+(defn meters->feet [m] (* m 3.28084))
+(defn meters->miles [m] (* m 0.000621))
+
+(meters->feet 1609.344)
+(meters->miles 1609.344)
+
+(comment
+  (our base unit of distance is the :meter
+       [There are 1000 :meters in a :kilometer]
+       [There are 100 :centemeters in a :meter]
+       ...))
+
+(comment
+  (define unit of distance
+    {:m 1
+     :km 1000
+     :cm 1/10
+     :mm [1/10 of a :cm]
+     :ft 0.3048
+     :mile [is 5280 :ft]}))
+
+(defn relative-units [context unit]
+  (if-let [spec (get context unit)]
+    (if (vector? spec)
+      (convert context spec)
+      spec)
+    (throw
+     (RuntimeException. (str "undefined nit " unit)))))
+
+(relative-units {:m 1 :cm 100 :mm [10 :cm]} :m)
+
+(relative-units {:m 1 :cm 1/100 :mm [1/10 :cm]} :mm)
+
+(relative-units {:m 1 :cm 100 :mm [10 :cm]} :what)
+
+(defmacro defunits-of [name base-unit & conversions]
+  (let [magnitude (gensym)
+        unit (gensym)
+        units-map (into `{~base-unit 1}
+                        (map vec (partition 2 conversions)))]
+    `(defmacro ~(symbol (str "unit-of-" name))
+       [~magnitude ~unit]
+       `(* ~~magnitude
+           ~(case ~unit
+              ~@(mapcat
+                 (fn [[u# & r#]]
+                   `[~u# ~(relative-units
+                           units-map
+                           u#)])
+                 units-map))))))
+
+(defunits-of distance :m
+  :km 1000
+  :cm 1/100
+  :mm [1/10 :cm]
+  :ft 0.3048
+  :mile [5280 :ft])
+
+(unit-of-distance 1 :m)
+(unit-of-distance 1 :mm)
+(unit-of-distance 441 :ft)
+
+(macroexpand-1 '(defunits-of distance :m
+  :km 1000
+  :cm 1/100
+  :mm [1/10 :cm]
+  :ft 0.3048
+  :mile [5280 :ft]))
+
+(macroexpand-1 '(unit-of-distance 1 :cm))
