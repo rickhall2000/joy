@@ -1,4 +1,5 @@
-(ns joy.ch15)
+(ns joy.ch15
+  (:require [clojure.core.reducers :as r]))
 
 (set! *warn-on-reflection* true)
 
@@ -155,7 +156,7 @@
 (time (dotimes [_ 1e5] (factorial-d 20)))
 
 (factorial-d 21)
-(factorial-a 21)
+#_(factorial-a 21)
 
 (defn factorial-e [^double original-x]
   (loop [x original-x acc 1.0]
@@ -276,3 +277,97 @@
 (filter #(not= % 2)
         (map half
              (lazy-range 0 10 2)))
+
+(defn r-map [mapping-fn reducible]
+  (fn new-reducible [reducing-fn init]
+    (reducible ((mapping mapping-fn) reducing-fn) init)))
+
+(defn r-filter [filter-pred reducible]
+  (fn new-reducible [reducing-fn init]
+    (reducible ((filtering filter-pred) reducing-fn) init)))
+
+(def our-final-reducible
+  (r-filter #(not= % 2)
+            (r-map half
+                   (reducible-range 0 10 2))))
+
+(our-final-reducible conj [])
+
+(defn core-r-map [mapping-fn core-reducible]
+  (r/reducer core-reducible (mapping mapping-fn)))
+
+(defn core-r-filter [filter-pred core-reducible]
+  (r/reducer core-reducible (filtering filter-pred)))
+
+(reduce conj []
+        (core-r-filter #(not= % 2)
+                       (core-r-map half [0 2 4 6 8])))
+
+(defn reduce-range [reducing-fn init start end step]
+  (loop [result init i start]
+    (if (empty-range? i end step)
+      result
+      (recur (reducing-fn result i)
+             (+ i step)))))
+
+#_(defn core-reducible-range [start end step]
+  (reify protos/CollReduce
+    (coll-reduce [this reducing-fn init]
+      (reducing-range reducing-fn init start end step))
+    (coll-reduce [this reducing-fn]
+      (if (empty-range? start end step)
+        (reducing-fn)
+        (reduce-range reducing-fn start (+ start step) end step)))))
+
+#_(reduce conj []
+        (core-r-filter #(not= % 2)
+                       (core-r-map half
+                                   (core-reducible-range 0 10 2))))
+
+(reduce + [1 2 3 4 5])
+(r/fold + [1 2 3 4 5])
+
+(defn core-f-map [mapping-fn core-reducible]
+  (r/folder core-reducible (mapping mapping-fn)))
+
+(defn core-f-filter [filter-pred core-reducible]
+  (r/folder core-reducible (filtering filter-pred)))
+
+(r/fold +
+        (core-f-filter #(not= % 2)
+                       (core-f-map half
+                                   [0 2 4 6 8])))
+
+(r/fold +
+        (r/filter #(not= % 2)
+                  (r/map half
+                         [0 2 4 6 8])))
+
+(r/fold + (range 10))
+(r/fold + (r/filter odd? (range 10)))
+
+(r/fold (fn ([] 100) ([a b] (+ a b))) (range 10))
+
+(r/fold (r/monoid + (constantly 100)) (range 10))
+
+(r/fold 512
+        (r/monoid + (constantly 100))
+        +
+        (range 10))
+
+(r/fold 4 (r/monoid conj (constantly []))
+        conj (vec (range 10)))
+
+(r/fold 4 (r/monoid into (constantly []))
+        conj (vec (range 10)))
+
+(r/foldcat (r/filter even? (vec (range 1000))))
+
+(seq (r/foldcat (r/filter even? (vec (range 10)))))
+
+(def big-vector
+  (vec (range 0 (* 10 1000 1000) 2)))
+
+(time
+ (r/fold + (core-f-filter even?
+                          (core-f-map half big-vector))))
