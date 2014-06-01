@@ -1,5 +1,7 @@
 (ns joy.ch16
-  (:require [clojure.set :as set]))
+  (:require [clojure.set :as set]
+            [clojure.walk :as walk]
+            [clojure.core.logic :as logic]))
 
 (def b1 '[3 - - - - 5 - 1 -
          - 7 - - - 6 - 3 -
@@ -71,6 +73,10 @@
   (set/difference #{1 2 3 4 5 6 7 8 9}
                   (numbers-present-for board index)))
 
+#_(defn pos [pred coll]
+  (for [[i v] (index coll)
+        :when (pred v)] i))
+
 #_(defn solve [board]
   (if-let [[i & _]
            (and (some '#{-} board)
@@ -83,3 +89,164 @@
     solve
     prep
     print-board)
+
+;; Thinking Data Via Unification
+
+(defn lvar? [x]
+  (boolean
+   (when (symbol? x)
+     (re-matches #"^\?.*" (name x)))))
+
+(lvar? '?x)
+(lvar? 'a)
+(lvar? 1)
+
+(defn satisfy1
+  [l r knowledge]
+  (let [L (get knowledge l l)
+        R (get knowledge r r)]
+    (cond
+     (= L R) knowledge
+     (lvar? L) (assoc knowledge L R)
+     (lvar? R) (assoc knowledge R L)
+     :default nil)))
+
+(satisfy1 '?something 2 {})
+
+(satisfy1 '?x '?y {})
+
+(->> {}
+     (satisfy1 '?x '?y)
+     (satisfy1 '?x 1))
+
+(defn satisfy [ l r knowledge]
+  (let [L (get knowledge l l)
+        R (get knowledge r r)]
+    (cond
+     (not knowledge) nil
+     (= L R) knowledge
+     (lvar? L) (assoc knowledge L R)
+     (lvar? R) (assoc knowledge R L)
+     (every? seq? [L R])
+     (satisfy (rest L)
+              (rest R)
+              (satisfy (first L)
+                       (first R)
+                       knowledge))
+     :default nil)))
+
+(satisfy '(1 2 3) '(1 ?something 3) {})
+
+(satisfy '(((?something))) '(((2))) {})
+
+(satisfy '(?x 2 3 (4 5 ?z))
+         '(1 2 ?y (4 5 6))
+         {})
+
+(satisfy '(?x 10000 3) '(1 2 ?y) {})
+
+(defn subst [term binds]
+  (walk/prewalk
+   (fn [expr]
+     (if (lvar? expr)
+       (or (binds expr) expr)
+       expr))
+   term))
+
+(subst '(1 ?x 3) '{?x 2})
+
+(subst '(1 ?x 3) '{})
+
+(def page '[:html
+            [:head [:title ?title]]
+            [:body [:h1 ?title]]])
+
+(subst page '{?title "Hi!"})
+
+(defn meld [term1 term2]
+  (->> {}
+       (satisfy term1 term2)
+       (subst term1)))
+
+(meld '(1 ?x 3) '(1 2 ?y))
+
+(meld '(1 ?x) '(?y (?y 2)))
+
+;; 16.3 Core.Logic
+(logic/run* [answer]
+            (logic/== answer 5))
+
+(logic/run* [val1 val2]
+            (logic/== {:a val1 :b 2}
+                      {:a 1, :b val2}))
+
+(logic/run* [x y]
+            (logic/== x y))
+
+(logic/run* [q]
+            (logic/== q 1)
+            (logic/== q 2))
+
+(logic/run* [george]
+            (logic/conde
+             [(logic/== george :born)]
+             [(logic/== george :unborn)]))
+
+#_(logic/defrel orbits oribtal body)
+
+#_(logic/fact orbits :mercury :sun)
+
+#_(logic/run* [q]
+            (logic/fresh [orbital body]
+                         (orbits orbital body)
+                         (logic/== q orbital)))
+
+(comment
+  (logic/defrel stars star)
+  (logic/fact stars :sun)
+  (defn planeto [body]
+    (logic/fresh [star]
+                 (stars star)
+                 (orbits body star)))
+
+  (logic/run* [q]
+              (planeto :earth)
+              (logic/== q true))
+
+  (logic/run* [q]
+              (planeto :sun)
+              (logic/== q true))
+
+  (logic/run* [q]
+              (logic/fresh [orbital]
+                           (planeto orbital)
+                           logic/== q orbital))
+
+  (logic/fact stars :alpha-centauri)
+
+  (logic/fact orbits :Bb :alpha-centauri)
+
+  (logic/run* [q]
+              (planeto :Bb))
+
+  (defn satelliteo [body]
+    (logic/fresh [p]
+                 (oribts body p)
+                 (planeto p)))
+
+  (logic/run* [q]
+              (satelliteo :sun))
+
+  (logic/run [q]
+             (satelliteo :earth))
+
+  (logic/fact orbits :moon :earth)
+
+  (logic/run* [q]
+              (satelliteo :moon))
+
+  (logic/fact orbits :phobos :mars)
+
+  (logic/fact obrits :deimos :mars)
+
+  )
