@@ -250,3 +250,99 @@
   (logic/fact obrits :deimos :mars)
 
   )
+
+;; 16.4 Constraints
+
+(logic/run* [q]
+            (logic/fresh [x y]
+                         (logic/== [:pizza "Java"] [x y])
+                         (logic/== q [x y])))
+
+(logic/run* [q]
+            (logic/fresh [x y]
+                         (logic/== q [x y])
+                         (logic/!= y "Java")))
+
+(logic/run* [q]
+            (logic/fresh [x y]
+                         (logic/== [:pizza "Java"] [x y])
+                         (logic/== q [x y])
+                         (logic/!= y "Java")))
+
+(logic/run* [q]
+            (logic/fresh [x y]
+                         (logic/== [:pizza "Scala"] [x y])
+                         (logic/== q [x y])
+                         (logic/!= y "Java")))
+
+(logic/run* [q]
+            (logic/fresh [n]
+                         (logic/== q n)))
+
+(require '[clojure.core.logic.fd :as fd])
+
+(logic/run* [q]
+            (logic/fresh [n]
+                         (fd/in n (fd/domain 0 1))
+                         (logic/== q n)))
+
+(logic/run* [q]
+            (let [coin (fd/domain 0 1)]
+              (logic/fresh [heads tails]
+                           (fd/in heads 0 coin)
+                           (fd/in tails 1 coin)
+                           (logic/== q [heads tails]))))
+
+(defn rowify [board]
+  (->> board
+       (partition 9)
+       (map vec)
+       vec))
+
+(rowify b1)
+
+(defn colify [rows]
+  (apply map vector rows))
+
+(colify (rowify b1))
+
+(defn subgrid [rows]
+  (partition 9
+             (for [row (range 0 9 3)
+                   col (range 0 9 3)
+                   x (range row (+ row 3))
+                   y (range row (+ col 3))]
+               (get-in rows [x y]))))
+
+(subgrid (rowify b1))
+
+(def logic-board #(repeatedly 81 logic/lvar))
+
+(defn init [[lv & lvs] [cell & cells]]
+  (if lv
+    (logic/fresh []
+                 (if (= '- cell)
+                   logic/succeed
+                   (logic/== lv cell))
+                 (init lvs cells))
+    logic/succeed))
+
+(defn solve-logically [board]
+  (let [legal-nums (fd/interval 1 9)
+        lvars (logic-board)
+        rows (rowify lvars)
+        cols (colify rows)
+        grids (subgrid rows)]
+    (logic/run 1 [q]
+               (init lvars board)
+               (logic/everyg #(fd/in % legal-nums) lvars)
+               (logic/everyg fd/distinct rows)
+               (logic/everyg fd/distinct cols)
+               (logic/everyg fd/distinct grids)
+               (logic/== q lvars))))
+
+(-> b1
+    solve-logically
+    first
+    prep
+    print-board)
