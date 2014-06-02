@@ -126,11 +126,11 @@
                       (feed-children feed))]
      (-> item :content first :content))))
 
-(tweet-items
+#_(tweet-items
  count
  "http://api.twitter.com/1/statuses/user_timeline.rss?user_id=46130870")
 
-(let [p (promise)]
+#_(let [p (promise)]
   (tweet-items #(deliver p (count %))
                "https://api.twitter.com/1.1/statuses/user_timeline.rss?user_id=46130870")
   @p)
@@ -143,7 +143,7 @@
 
 (def count-items (cps->fn tweet-items count))
 
-(count-items "https://api.twitter.com/1.1/statuses/user_timeline.rss?user_id=46130870")
+#_(count-items "https://api.twitter.com/1.1/statuses/user_timeline.rss?user_id=46130870")
 
 (def kant (promise))
 (def hume (promise))
