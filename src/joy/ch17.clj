@@ -348,3 +348,49 @@
            (traverse DB visit))))
 
 (defn div [n d] (int (/ n d)))
+
+(defn readr [prompt exit-code]
+  (let [input (clojure.main/repl-read prompt exit-code)]
+    (if (= input ::tl)
+      exit-code
+      input)))
+
+(defmacro local-context []
+  (let [symbols (keys &env)]
+    (zipmap (map (fn [sym] `(quote ~sym))
+                 symbols)
+            symbols)))
+
+(local-context)
+(let [a 1 b 2]
+  (let [b 200]
+    (local-context)))
+
+(defn contextual-eval [ctx expr]
+  (eval
+   `(let [~@(mapcat (fn [[k v]] [k `'~v]) ctx)]
+      ~expr)))
+
+(defmacro break []
+  `(clojure.main/repl
+    :prompt #(print "debug=> ")
+    :read readr
+    :eval (partial contextual-eval (local-context))))
+
+(defn div [n d] (break) (int (/ n d)))
+
+(defn keys-apply [f ks m]
+  (break)
+  (let [only (select-keys m ks)]
+    (break)
+    (zipmap (keys only) (map f (vals only)))))
+
+(keys-apply inc [:a :b] {:a 1 :b 2 :c 3})
+
+(defmacro awhen [expr & body]
+  (break)
+  `(let [~'it ~expr]
+     (if ~'it
+       (do (break) ~@body))))
+
+(awhen [1 2 3] (it 2))
